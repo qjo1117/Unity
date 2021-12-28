@@ -1,0 +1,160 @@
+컴퓨트 셰이더로 하기 때문에
+Noise, Light, Collider 모듈등도 빠르게 가능
+
+수학공식을 이용해서 자연스럽게 움직임을 만들어내는 것이 가능
+sin
+
+다양한 속성을 이요해서 계산할 수 있음
+
+벡터 필드, 포인트 캐시이용가능
+랜덤 함수가 추가됨!
+각종 공간변환행렬 사용가능
+변수제어가 용이해짐
+
+파티클을 생성하는 녀석을 이미터라고 한다
+몇초동안 Emission을 해야 할지 Duration
+
+파티클은 이미터가 전달해준 속성값들을 다 알고 있어야한다.
+어떻게 변형할건지
+힘을 받아 움직일지? 충돌적용할지? 어디방향으로 갈지?
+
+Initialize, Start, Update, over Lifetime
+
+1. Spawn 블록
+
+Loop, Delay를 넣을수 있다.
+Event로 시작과 끝을 넣을 수 있다.
+Spawn Rate에 변수를 만들어 넣을 수 있다.
+
+2. Initialize 블록
+
+여러 속성을 붙일 수 있음
+Lifetime, Velocity,andle
+Bound설정 가능
+Position 설정가능
+
+인스펙터 옵션으로 노드속성 변경 가능
+
+
+
+Velocity를 알고 있으면 다음 위치 이전위치를 얻을 수 있다.
+이전위치 = Position - (Velocity / FrameTime)
+다음위치 = Position + (Velocity / FrameTime)
+
+일일히 적었던 숫자들을 수식을 이용하는 방식으로 습관변경
+float Negate로 SetVelocity Random을 얻을 수 있다.
+
+Update1.
+
+포지션을 받아와서 컬러에 적용
+Frac은 정수를 버리고 소수를 취하는 함수
+파티클의 위치값에 따라서 색이 다르게 나오게 할 수 있다.
+GetAttribute->Fractional->Color
+
+Update2.
+
+현재 포지션을 Normalize하여 중심점으로부터의 벡터를 얻고 
+음수를 곱해주면 강하게 안쪽으로 모이는 힘을 얻을 수 있다.
+GetAttribute->Normalize->Multiply->velocity
+
+Update3.
+커브 샘플링하기
+
+계산으로 만들기 빡센 움직임은 그냥 커브를 만들어 넣을 수도 있다.
+Age Over LifeTime을 Time에 연결. 가로축이 Age가 된다.
+Output블록에서 overLifeTime을 손쉽게 넣을 수도 있다. 
+(생각대로 움직이지 않는다면 중복인지 체크)
+AgeOverLifeTime->SampleCurve
+
+Update4.
+터뷸런스 사용해보기
+
+Field Transform도 변형해보면 재미있는 효과가 나온다.
+Relative - 파티클의 원래 힘에 합해서 계산
+Absolute - 파티클의 힘을 단순히 덮어씌워 계산
+Intensity - 난류의 강도
+Drag - 난류의 저항
+Frequency - 난류의 파장
+Roughness - 거칠게 흩어지는 정도
+Lacunarity - 프랙탈이 공간을 채우는 간격
+
+노이즈 노드가 있는데 터뷸런스와 비슷한 효과를 만들어낼수 있다.
+
+Update5. 노이즈 노드사용
+
+보통 Position 속성노드를 Coordinate에 연결
+Value, Perlin, Cellular
+Curl Noise는 아티팩트를 줄일 때 사용 (Value, Perlin만 있음)
+Random Number는 범위 내에서 무질서한 값을 출력하지만 Noise는 '연속성'이 있는 랜덤값을 출력
+
+
+
+--------------------------------------------------------------------------------
+
+응용1. 원운동, 위글러
+
+cos(x)와 sin(y)를 더하면 원운동
+이미터가 원궤적을 그리며 돌게 해 보자
+X,Y,Z 값을 각각 다르게 움직이게 하면 위글러
+
+
+응용2. HSV to RGB
+
+계산으로 구한 특정값을 HSV 중 H에 넣어서 Hue 베리에이션
+S와 V는 주로 1 근처의 값을 사용가능
+Hue는 Fraction과 함께 사용하면 자연스럽게 루핑이 되어 좋다.
+다채로운 색을 표현하기 좋다.
+
+
+응용3. Particle ID
+
+Particle ID를 Position.x에 연결
+특정 변수를 넘어가면 Y값에 1을 더하고 다시 반복(Module & Divide)
+특정 변수의 제곱을 넘어가면 Z값에 1을 더하고 반복
+
+
+응용4. 포인트 캐시이용가능
+
+Set Position from Map 노드
+포인터 캐시 추출 유틸리티
+Mesh로 만들려면 3D 포인트 캐시
+Color, Normal, UV등의 정보도 출력가능
+
+
+응용5. 볼륨 렌더링
+
+미리 벡터 필드를 구해와야 한다.
+SDF(Signed Distance Field)
+DGF(Distance Gradiant Field) 필요
+후디니에서 쉽게 생성할 수 있다.
+편의상 두줄로 만들어 두자
+깃헙 - https://github.com/Unity-Technologies/VFXToolbox
+
+
+SDF의 원리
+SDF에서 Signed는 음수와 양수를 모두 표현할 수 있다는 뜻이다.
+(Unsigned는 양수만, 음수/양수를 구분할 수 있는 Sign이 Type구조안에
+있는가 없는가에 따라 다르다.)
+즉 특정 볼륨의 SDF는 정확하게 동일할때 0
+바깥으로 갈수록 양수증가
+안쪽으로 갈수록 음수증가
+특정 볼륨으로부터의 거리를 VectorField화 한 것
+
+
+응용6. Sphere Collider적용
+VFX Property Binder
+외부에서 VFX Graph Property에 직접 값을 넣어주는 편의 스크립트
+외부 데이터를 VFX에서 시각화하는데에도 사용가능
+
+
+응용7. LineOutput
+
+LineOutput만은 다른 녀석들과 조금 다르게 TargetPosition이라는 속성에 값을 넣어주어야한다.
+현재 Position과 TargetPosition사이를 잇는 것이 Line
+
+
+응용8. Shader Graph 연동
+shaderGraph에서 VFX Shader Graph를 제작
+ShaderGraph에서 프로퍼티를 만들면 알아서 vfx graph output노드에 프로퍼티가 추가된다.
+ShaderGraph의 아웃푹은 무조건 들어오기 때문에 불편한 면도 있다. 
+(무조건 컬러를 덮어씌우기 때문에 그래디언트가 있었다면 vfx프로퍼티로 그래디언트등을 추가해서 연결해 주어야한다.)
